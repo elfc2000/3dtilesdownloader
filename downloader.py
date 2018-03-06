@@ -17,23 +17,7 @@ socket.setdefaulttimeout(300)
 import gzip
 from cStringIO import StringIO
 
-'''
-import contextlib
 
-@contextlib.contextmanager
-def patch_gzip_for_partial():
-    """
-    Context manager that replaces gzip.GzipFile._read_eof with a no-op.
-
-    This is useful when decompressing partial files, something that won't
-    work if GzipFile does it's checksum comparison.
-
-    """
-    _read_eof = gzip.GzipFile._read_eof
-    gzip.GzipFile._read_eof = lambda *args, **kwargs: None
-    yield
-    gzip.GzipFile._read_eof = _read_eof
-'''
 
 def getContents(contents, n):
 
@@ -63,19 +47,12 @@ def gzdecode(data):
     #print len(data)
     return data2 
 
-def autoDownLoad(url,add):#文件下载不完整，自动重新加载
-    #print add
+def autoDownLoad(url,add):
+    
     try:
-        '''
-        我们使用urllib.urlretrieve(url,filename)
-        时经常遇到下载到一半时，出现urllib.ContentTooShortError错误。
-        这是因为文件下载不完全导致的错误。
-        如果发现问题的是诸如图片和音乐文件这一类文件较小的问题，可以很容易使用以下方式解决。
-        '''
-        a, b = urllib.urlretrieve(url, add)#a表示地址， b表示返回头
+        #a表示地址， b表示返回头
+        a, b = urllib.urlretrieve(url, add)
         keyMap = dict(b)
-        #print keyMap
-        #need decode
         if 'content-encoding' in keyMap and keyMap['content-encoding'] == 'gzip':
             #print 'need2be decode'
             objectFile = open(add, 'rb+')#以读写模式打开
