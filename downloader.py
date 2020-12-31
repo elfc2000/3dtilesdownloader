@@ -22,18 +22,30 @@ from cStringIO import StringIO
 def getContents(contents, n):
 
     #下载content url里的东西
+    print "keys are:" + list_to_str(n.keys())
     if n.has_key('content'):
+        print "got key content"
         c = n['content']
-        if c.has_key('url'):
+        if c.has_key('uri'):
+            contents.append(c['uri'])
+        else c.has_key('url'):
             contents.append(c['url'])
+    else:
+        pass #print "no key content in" + json.dumps(n) 
 
 
     if n.has_key('children'):
+        print "got key children"
         children = n['children']
         for i in range(len(children)):
             c = children[i]
+            print "processing: "
+            print c
             getContents(contents,c)
+    else:
+        pass #print "no key children" + json.dumps(n)
     
+    print "current contents:" + list_to_str(contents)
 
 
     return
@@ -80,7 +92,64 @@ def autoDownLoad(url,add):
     return False
 
 
+def unicode_convert(input):
+    if isinstance(input, dict):
+        return {unicode_convert(key): unicode_convert(value) for key, value in input.iteritems()}
+    elif isinstance(input, list):
+        return [unicode_convert(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
 
+def str_to_list(t_str):
+    a_list = []
+    for c in str(t_str):
+        a_list.append(c)
+    return a_list
+
+
+def list_to_str(a_list):
+    return "".join(list(map(str, a_list)))
+
+def process_file(savedir, thefile):
+    #解析
+    tilesetfile = savedir+"/"+thefile
+    tileset = None
+    try:
+        f = codecs.open(tilesetfile,'r','utf-8')
+        s = f.read()
+        f.close()
+        #print s
+        tileset = json.loads(s)
+        tileset=unicode_convert(tileset)
+        #print tileset
+    except Exception as e:
+        print e    
+
+    contents = []
+    getContents(contents,tileset['root'])
+
+
+    for i in range(start,len(contents)):
+        c = contents[i]
+
+        file = savedir+'/' + c
+
+        dirname =  os.path.dirname(file)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname) 
+
+        url = baseurl + c + '?' + uu.query
+        if autoDownLoad(url,file):
+            print  c + ' download success: '  + str(i+1) + '/' + str(len(contents))
+            if c.endswith('.json'):
+                process_file(savedir, c)
+        else:
+            print  c + ' download failed: '  + str(i+1) + '/' + str(len(contents))
+
+    return contents
+    #下载tilesetjson
 
 if __name__ == "__main__":
 
@@ -151,34 +220,5 @@ if __name__ == "__main__":
 
     print 'download tileset.json success'
 
-    #解析
-    tileset = None
-    try:
-        f = codecs.open(tilesetfile,'r','utf-8')
-        s = f.read()
-        f.close()
+    process_file(savedir, '/tileset.json')
 
-        tileset = json.loads(s)
-    except Exception as e:
-        print e    
-
-    contents = []
-    getContents(contents,tileset['root'])
-
-
-    for i in range(start,len(contents)):
-        c = contents[i]
-
-        file = savedir+'/' + c
-
-        dirname =  os.path.dirname(file)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname) 
-
-        url = baseurl + c + '?' + uu.query
-        if autoDownLoad(url,file):
-            print  c + ' download success: '  + str(i+1) + '/' + str(len(contents))
-        else:
-            print  c + ' download failed: '  + str(i+1) + '/' + str(len(contents))
-
-    #下载tilesetjson
